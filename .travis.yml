@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t brunospitti/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true brunospitti/react-test npm test
+
+after_success:
+  - docker build -t brunospitti/multi-client ./client
+  - docker build -t brunospitti/multi-nginx ./nginx
+  - docker build -t brunospitti/multi-server ./server
+  - docker build -t brunospitti/multi-worker ./worker
+  # Log in to the docker CLI (added env variables in travis dashboard)
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push brunospitti/multi-client
+  - docker push brunospitti/multi-nginx
+  - docker push brunospitti/multi-server
+  - docker push brunospitti/multi-worker
